@@ -22,10 +22,4 @@ channels = [
  { number = 1, scale = [100, 1000] },
  { number = 3, scale = [100, 2000] }
 ]
-
-# Leave these commented out if you want do do the whole file
-# Otherwise set them to the tiles/series you want to process
-#tile.min = 0
-#tile.max = 1 # non-inclusive
-
 ```

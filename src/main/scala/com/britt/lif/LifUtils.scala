@@ -13,14 +13,15 @@ import loci.formats.services.OMEXMLService
 
 object LifUtils extends LazyLogging {
 
-  def getReader(filename: String): LIFReader = {
+  // Return a tuple of the reader and valid series within it
+  def getReader(filename: String): (LIFReader, Seq[Int]) = {
     val factory = new ServiceFactory
     val service = factory.getInstance(classOf[OMEXMLService])
     val omexml = service.createOMEXMLMetadata
     val reader = new LIFReader()
     reader.setMetadataStore(omexml)
     reader.setId(filename)
-    reader
+    (reader, Range(0, reader.getSeriesCount).filter(omexml.getImageName(_).endsWith("_ICC")))
   }
 
   // Optionally transform
