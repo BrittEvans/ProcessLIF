@@ -13,6 +13,7 @@ object ProcessLif extends App with LazyLogging {
   val config = ConfigFactory.load()
   val inputFile = config.getString("inputFile")
   logger.info(s"Processing file $inputFile")
+  val reader = LifUtils.getReader(inputFile)
 
   val outputDir = Paths.get(config.getString("outputDirectory")).toFile
   val idCode = config.getString("idCode")
@@ -27,7 +28,6 @@ object ProcessLif extends App with LazyLogging {
   logger.info(s"Extracting channels...")
   channels.foreach(c => logger.info(c.toString))
 
-  val reader = LifUtils.getReader(inputFile)
   for (series <- minSeries until maxSeries) {
     for (channel <- channels) {
       logger.info(s"Working on $series-${channel.number}")
