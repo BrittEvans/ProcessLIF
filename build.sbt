@@ -8,9 +8,13 @@ lazy val root = (project in file(".")).
         "ome" % "formats-gpl" % "6.4.0",
         "net.imagej" % "ij" % "1.49m",
         "sc.fiji" % "Extended_Depth_Field" % "2.0.2-SNAPSHOT",
-        "sc.fiji" % "imageware" % "2.0.0"
-    ),
-    resolvers += "OME" at "https://artifacts.openmicroscopy.org/artifactory/maven",
+        "sc.fiji" % "imageware" % "2.0.0",
+        "com.typesafe" % "config" % "1.4.0",
+        "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+        "ch.qos.logback" % "logback-classic" % "1.2.3",
+        "ch.qos.logback" % "logback-core" % "1.2.3"
+),
+resolvers += "OME" at "https://artifacts.openmicroscopy.org/artifactory/maven",
     resolvers += Resolver.mavenLocal,
     mainClass in assembly := Some("com.britt.lif.ProcessLif"),
     updateOptions := updateOptions.value.withLatestSnapshots(false),

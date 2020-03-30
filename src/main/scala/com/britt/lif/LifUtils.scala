@@ -1,7 +1,9 @@
 package com.britt.lif
 
+import java.io.File
 import java.nio.{ByteBuffer, ByteOrder}
 
+import com.typesafe.scalalogging.LazyLogging
 import edf.EdfComplexWavelets
 import edfgui.Parameters
 import ij.{IJ, ImagePlus, ImageStack}
@@ -9,7 +11,7 @@ import loci.common.services.ServiceFactory
 import loci.formats.in.LIFReader
 import loci.formats.services.OMEXMLService
 
-object LifUtils {
+object LifUtils extends LazyLogging {
 
   def getReader(filename: String): LIFReader = {
     val factory = new ServiceFactory
@@ -22,24 +24,26 @@ object LifUtils {
   }
 
   // Optionally transform
-  def extractStack(reader: LIFReader, series: Int, channel: Int,
-                   scale: Option[(Int,Int)]): ImageStack = {
+  def extractStack(reader: LIFReader, series: Int, channel: Channel): ImageStack = {
     reader.setSeries(series)
     val nX = reader.getSizeX
     val nY = reader.getSizeY
-    val buf = ByteBuffer.allocate(nX * nY * 2) //2 for 16-bit pixels
-    buf.order(ByteOrder.LITTLE_ENDIAN)
+    logger.debug(s"Image is $nX x $nY")
+    val buf = ByteBuffer.allocate(nX * nY * 2) // Assuming 16-bit pixels
+    if (reader.isLittleEndian)
+      buf.order(ByteOrder.LITTLE_ENDIAN)
     val stack = new ImageStack(nX,nY)
 
-    for (i <- 0 until reader.getImageCount if i / reader.getSizeZ == channel) {
+    for (i <- 0 until reader.getImageCount if i / reader.getSizeZ == channel.number) {
+      logger.debug(s"Reading image $i")
       buf.clear()
       reader.openBytes(i, buf.array())
       buf.rewind()
-      scale match {
+      channel.scale match {
         case Some((min, max)) =>
           val pixels = Array.fill(nX * nY)(transform(buf.getShort(), min, max))
           stack.addSlice(i.toString, pixels)
-        case None             =>
+        case None =>
           val myShortArray = new Array[Short](nX * nY)
           buf.asShortBuffer().get(myShortArray)
           stack.addSlice(i.toString, myShortArray)
@@ -49,16 +53,16 @@ object LifUtils {
   }
 
   def doEDOF(input: ImageStack, outputFileName: String): Boolean = {
-    println("Running EDOF")
+    logger.info("Running EDOF")
     val iw = imageware.Builder.create(input)
     val params = new Parameters()
     params.setQualitySettings(Parameters.QUALITY_HIGH)
     val edf = new EdfComplexWavelets(params.daubechielength, params.nScales, params.subBandCC, params.majCC)
     val out = edf.process(iw)(0)
     //out.show("EDOF")
+    logger.debug("Done EDOF, printing output info")
+    logger.whenDebugEnabled(out.printInfo())
     IJ.saveAsTiff(new ImagePlus("Output", out.buildImageStack()), outputFileName)
-    //println("Done EDOF, printing output info")
-    //out.printInfo()
   }
 
   def transform(original: Short, min: Int, max: Int): Byte = {
@@ -70,18 +74,6 @@ object LifUtils {
     else
       (((unsigned - min)/max.toFloat) * 255).floor.toByte
   }
-  /*
-  * Ch00 Color Blue: 100-2000
-  * Ch01 Color Green: 100-1000
-  * Ch03 Color Red: 100-2000
-   */
-  def rangeForChannel(channel: Int): (Int, Int) =
-    channel match {
-      case 0 => (100, 2000)
-      case 1 => (100, 1000)
-      case 3 => (100, 2000)
-      case _ => throw new IllegalArgumentException(s"Invalid channel $channel")
-    }
 
   /*
    * Naming construct needed the ID code which will be a combination of 4 numbers
@@ -89,6 +81,6 @@ object LifUtils {
  then _s## (the 0-76) then _zEDOF then _ch##
    * e.g. 3470LC_s05_zEDOF_ch03
    */
-  def getFileName(series: Int, channel: Int): String =
-    f"/Users/Britt/lifFiles/output2/3470LC_s$series%2d_zEDOF_ch$channel%2d.tiff"
+  def getFileName(outputDirectory: File, idCode: String, series: Int, channel: Channel): String =
+    new File(outputDirectory, f"${idCode}_s$series%02d_zEDOF_ch${channel.number}%02d.tiff").getPath
 }
