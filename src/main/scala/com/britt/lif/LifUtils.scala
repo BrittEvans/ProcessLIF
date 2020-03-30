@@ -21,11 +21,15 @@ object LifUtils extends LazyLogging {
     val reader = new LIFReader()
     reader.setMetadataStore(omexml)
     reader.setId(filename)
-    (reader, Range(0, reader.getSeriesCount).filter(omexml.getImageName(_).endsWith("_ICC")))
+    (reader,
+     Range(0, reader.getSeriesCount)
+       .filter(omexml.getImageName(_).endsWith("_ICC")))
   }
 
   // Optionally transform
-  def extractStack(reader: LIFReader, series: Int, channel: Channel): ImageStack = {
+  def extractStack(reader: LIFReader,
+                   series: Int,
+                   channel: Channel): ImageStack = {
     reader.setSeries(series)
     val nX = reader.getSizeX
     val nY = reader.getSizeY
@@ -33,9 +37,10 @@ object LifUtils extends LazyLogging {
     val buf = ByteBuffer.allocate(nX * nY * 2) // Assuming 16-bit pixels
     if (reader.isLittleEndian)
       buf.order(ByteOrder.LITTLE_ENDIAN)
-    val stack = new ImageStack(nX,nY)
+    val stack = new ImageStack(nX, nY)
 
-    for (i <- 0 until reader.getImageCount if i / reader.getSizeZ == channel.number) {
+    for (i <- 0 until reader.getImageCount
+         if i / reader.getSizeZ == channel.number) {
       logger.debug(s"Reading image $i")
       buf.clear()
       reader.openBytes(i, buf.array())
@@ -58,12 +63,16 @@ object LifUtils extends LazyLogging {
     val iw = imageware.Builder.create(input)
     val params = new Parameters()
     params.setQualitySettings(Parameters.QUALITY_HIGH)
-    val edf = new EdfComplexWavelets(params.daubechielength, params.nScales, params.subBandCC, params.majCC)
+    val edf = new EdfComplexWavelets(params.daubechielength,
+                                     params.nScales,
+                                     params.subBandCC,
+                                     params.majCC)
     val out = edf.process(iw)(0)
     //out.show("EDOF")
     logger.debug("Done EDOF, printing output info")
     logger.whenDebugEnabled(out.printInfo())
-    IJ.saveAsTiff(new ImagePlus("Output", out.buildImageStack()), outputFileName)
+    IJ.saveAsTiff(new ImagePlus("Output", out.buildImageStack()),
+                  outputFileName)
   }
 
   def transform(original: Short, min: Int, max: Int): Byte = {
@@ -73,7 +82,7 @@ object LifUtils extends LazyLogging {
     else if (unsigned >= max)
       255.toByte
     else
-      (((unsigned - min)/max.toFloat) * 255).floor.toByte
+      (((unsigned - min) / max.toFloat) * 255).floor.toByte
   }
 
   /*
@@ -82,6 +91,11 @@ object LifUtils extends LazyLogging {
  then _s## (the 0-76) then _zEDOF then _ch##
    * e.g. 3470LC_s05_zEDOF_ch03
    */
-  def getFileName(outputDirectory: File, idCode: String, series: Int, channel: Channel): String =
-    new File(outputDirectory, f"${idCode}_s$series%02d_zEDOF_ch${channel.number}%02d.tiff").getPath
+  def getFileName(outputDirectory: File,
+                  idCode: String,
+                  series: Int,
+                  channel: Channel): String =
+    new File(
+      outputDirectory,
+      f"${idCode}_s$series%02d_zEDOF_ch${channel.number}%02d.tiff").getPath
 }

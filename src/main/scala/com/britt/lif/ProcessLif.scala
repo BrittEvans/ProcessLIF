@@ -29,7 +29,8 @@ object ProcessLif extends App with LazyLogging {
       logger.info(s"Working on $series-${channel.number}")
       val rawStack = LifUtils.extractStack(reader, series, channel)
       //IJ.saveAsTiff(new ImagePlus("Raw", rawStack), "/tmp/raw4.tiff")
-      LifUtils.doEDOF(rawStack, LifUtils.getFileName(outputDir, idCode, series, channel))
+      LifUtils.doEDOF(rawStack,
+                      LifUtils.getFileName(outputDir, idCode, series, channel))
     }
   }
   reader.close()
