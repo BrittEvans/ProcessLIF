@@ -6,6 +6,7 @@ import java.nio.{ByteBuffer, ByteOrder}
 import com.typesafe.scalalogging.LazyLogging
 import edf.EdfComplexWavelets
 import edfgui.Parameters
+import ij.process.ImageConverter
 import ij.{IJ, ImagePlus, ImageStack}
 import loci.common.services.ServiceFactory
 import loci.formats.in.LIFReader
@@ -71,8 +72,10 @@ object LifUtils extends LazyLogging {
     //out.show("EDOF")
     logger.debug("Done EDOF, printing output info")
     logger.whenDebugEnabled(out.printInfo())
-    IJ.saveAsTiff(new ImagePlus("Output", out.buildImageStack()),
-                  outputFileName)
+    val ip = new ImagePlus("Output", out.buildImageStack())
+    val converter = new ImageConverter(ip)
+    converter.convertToGray8()
+    IJ.saveAsTiff(ip, outputFileName)
   }
 
   def transform(original: Short, min: Int, max: Int): Byte = {
