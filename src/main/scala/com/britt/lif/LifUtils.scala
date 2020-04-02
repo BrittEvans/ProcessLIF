@@ -97,8 +97,9 @@ object LifUtils extends LazyLogging {
   def getFileName(outputDirectory: File,
                   idCode: String,
                   series: Int,
+                  seriesMin: Int,
                   channel: Channel): String =
     new File(
       outputDirectory,
-      f"${idCode}_s$series%02d_zEDOF_ch${channel.number}%02d.tiff").getPath
+      f"${idCode}_s${series-seriesMin+1}%02d_zEDOF_ch${channel.number}%02d.tiff").getPath
 }
